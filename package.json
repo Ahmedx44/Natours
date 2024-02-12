@@ -4,7 +4,8 @@
   "description": "learning express,node, mongoDB",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon server.js"
+    "start": "nodemon server.js",
+    "debug": "d"
   },
   "author": "Ahmed Gemechu",
   "license": "ISC",
