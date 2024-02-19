@@ -1,58 +1,68 @@
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const validator = require('validator');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
-//name, email,photo,password,passwordConfirm
-const userSchema = mongoose.Schema({
+const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Name is required'],
-    maxlength: [20, 'Name must have 20 or less characters'],
-    minlength: [2, 'Name must have 2 or greater characters'], // Corrected from 20 to 2
+    required: [true, 'Please tell us your name!'],
   },
-
   email: {
     type: String,
-    required: [true, 'Email is required'],
+    required: [true, 'Please provide your email'],
     unique: true,
+    lowercase: true,
     validate: [validator.isEmail, 'Please provide a valid email'],
   },
-  photo: {
-    type: String,
-  },
+  photo: String,
   role: {
     type: String,
-    enum: ['user', 'admin', 'lead-guide', 'guide'],
-    default: 'admin',
+    enum: ['user', 'guide', 'lead-guide', 'admin'],
+    default: 'user',
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
-    minlength: [6, 'Password must have 6 or more characters'],
+    required: [true, 'Please provide a password'],
+    minlength: 8,
     select: false,
   },
   passwordConfirm: {
     type: String,
-    required: [true, 'Password Confirm is required'],
+    required: [true, 'Please confirm your password'],
     validate: {
-      //This only work in CREATE and Save
+      // This only works on CREATE and SAVE!!!
       validator: function (el) {
         return el === this.password;
       },
-      message: 'Passwords are not the same',
+      message: 'Passwords are not the same!',
     },
   },
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 
 userSchema.pre('save', async function (next) {
+  // Only run this function if password was actually modified
   if (!this.isModified('password')) return next();
+
+  // Hash the password with cost of 12
   this.password = await bcrypt.hash(this.password, 12);
 
+  // Delete passwordConfirm field
   this.passwordConfirm = undefined;
+  next();
+});
+
+userSchema.pre(/^find/, function (next) {
+  // this points to the current query
+  this.find({ active: { $ne: false } });
   next();
 });
 
@@ -63,16 +73,17 @@ userSchema.methods.correctPassword = async function (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
-userSchema.methods.changePasswordAfter = function (JWTTimestamp) {
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   if (this.passwordChangedAt) {
-    const changeTimeStamp = parseInt(
+    const changedTimestamp = parseInt(
       this.passwordChangedAt.getTime() / 1000,
       10
     );
 
-    return JWTTimestamp < changeTimeStamp;
+    return JWTTimestamp < changedTimestamp;
   }
 
+  // False means NOT changed
   return false;
 };
 
@@ -91,5 +102,6 @@ userSchema.methods.createPasswordResetToken = function () {
   return resetToken;
 };
 
-const User = mongoose.model('user', userSchema);
+const User = mongoose.model('User', userSchema);
+
 module.exports = User;
