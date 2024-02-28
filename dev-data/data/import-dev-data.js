@@ -12,9 +12,7 @@ mongoose
   .then(() => console.log('Database connected'))
   .catch((err) => console.error('Database connection error:', err));
 
-const tour = JSON.parse(
-  fs.readFileSync(`${__dirname}/tours-simple.json`, 'utf-8')
-);
+const tour = JSON.parse(fs.readFileSync(`${__dirname}/tours.json`, 'utf-8'));
 
 const importData = async () => {
   try {
