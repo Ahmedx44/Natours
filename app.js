@@ -4,6 +4,7 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./Controllers/errorController');
 const userRouter = require('./Routes/userRoutes');
 const tourRouter = require('./Routes/tourRoutes');
+const reviewRouter = require('././Routes/reviewRoute');
 const rateLimit = require('express-rate-limit'); //npm i express-rate-limit
 const helmet = require('helmet'); //npm i helmet
 const mongoSanitize = require('express-mongo-sanitize'); //npm i express-mongo-sanitize
@@ -57,6 +58,7 @@ app.use(express.static(`${__dirname}/public`));
 //3)Route
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/review', reviewRouter);
 
 app.all('*', (req, res, next) => {
   next(new AppError(`can't find ${req.originalUrl} on this server`), 404);
